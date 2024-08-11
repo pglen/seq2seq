@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys, glob, getopt, time, string, signal, stat, shutil
-import traceback
-
-#import warnings; warnings.simplefilter("ignore");
-#import gtk; warnings.simplefilter("default")
+import traceback, re
 
 # ------------------------------------------------------------------------
 # Handle command line. Interpret optarray and decorate the class
@@ -60,7 +57,7 @@ class Config:
 # ------------------------------------------------------------------------
 # Print an exception as the system would print it
 
-def print_exception(xstr = "exc"):
+def print_exception(xstr = "exc", fp = sys.stdout):
     cumm = xstr + " "
     a,b,c = sys.exc_info()
     if a != None:
@@ -74,7 +71,7 @@ def print_exception(xstr = "exc"):
                     "   Context: " + aa[2] + " -> " + aa[3] + "\n"
         except:
             print("Could not print trace stack. ", sys.exc_info())
-    print(cumm)
+    print(cumm, file=fp)
 
 # ------------------------------------------------------------------------
 # Never mind
@@ -109,37 +106,27 @@ def cmp(aa, bb):
             #print "crap"
             pass
 
-# ------------------------------------------------------------------------
-# Show a regular message:
-
-def message(strx, title = None, icon = None):
-
-    pass
-
-    dialog = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT,
-        icon, gtk.BUTTONS_CLOSE, strx)
-
-    if title:
-        dialog.set_title(title)
-    else:
-        dialog.set_title("ePub Reader")
-
-    # Close dialog on user response
-    dialog.connect("response", lambda d, r: d.destroy())
-    dialog.show()
-
-
 # -----------------------------------------------------------------------
 # Sleep just a little, but allow the system to breed
 
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
 def  usleep(msec):
 
-    got_clock = time.clock() + float(msec) / 1000
+    if sys.version_info[0] < 3 or \
+        (sys.version_info[0] == 3 and sys.version_info[1] < 3):
+        timefunc = time.clock
+    else:
+        timefunc = time.process_time
+
+    got_clock = timefunc() + float(msec) / 1000
     #print got_clock
     while True:
-        if time.clock() > got_clock:
+        if timefunc() > got_clock:
             break
-        gtk.main_iteration_do(False)
+        Gtk.main_iteration_do(False)
 
 # -----------------------------------------------------------------------
 # Call func with all processes, func called with stat as its argument
@@ -158,84 +145,9 @@ def withps(func, opt = None):
             break
     return ret
 
-# ------------------------------------------------------------------------
-# Find
-
-def find(self):
-
-    head = "Find in text"
-
-    dialog = gtk.Dialog(head,
-                   None,
-                   gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                   (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                    gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-    dialog.set_default_response(gtk.RESPONSE_ACCEPT)
-
-    try:
-        dialog.set_icon_from_file("epub.png")
-    except:
-        print("Cannot load find dialog icon", sys.exc_info())
-
-    self.dialog = dialog
-
-    # Spacers
-    label1 = gtk.Label("   ");  label2 = gtk.Label("   ")
-    label3 = gtk.Label("   ");  label4 = gtk.Label("   ")
-    label5 = gtk.Label("   ");  label6 = gtk.Label("   ")
-    label7 = gtk.Label("   ");  label8 = gtk.Label("   ")
-
-    warnings.simplefilter("ignore")
-    entry = gtk.Entry();
-    warnings.simplefilter("default")
-    entry.set_text(self.oldfind)
-
-    entry.set_activates_default(True)
-
-    dialog.vbox.pack_start(label4)
-
-    hbox2 = gtk.HBox()
-    hbox2.pack_start(label6, False)
-    hbox2.pack_start(entry)
-    hbox2.pack_start(label7, False)
-
-    dialog.vbox.pack_start(hbox2)
-
-    dialog.checkbox = gtk.CheckButton("Search _Backwards")
-    dialog.checkbox2 = gtk.CheckButton("Case In_sensitive")
-    dialog.vbox.pack_start(label5)
-
-    hbox = gtk.HBox()
-    #hbox.pack_start(label1);  hbox.pack_start(dialog.checkbox)
-    #hbox.pack_start(label2);  hbox.pack_start(dialog.checkbox2)
-    hbox.pack_start(label3);
-    dialog.vbox.pack_start(hbox)
-    dialog.vbox.pack_start(label8)
-
-    label32 = gtk.Label("   ");  label33 = gtk.Label("   ")
-    label34 = gtk.Label("   ");  label35 = gtk.Label("   ")
-
-    hbox4 = gtk.HBox()
-
-    hbox4.pack_start(label32);
-    dialog.vbox.pack_start(hbox4)
-
-    dialog.show_all()
-    response = dialog.run()
-    self.srctxt = entry.get_text()
-
-    dialog.destroy()
-
-    if response != gtk.RESPONSE_ACCEPT:
-        return None
-
-    return self.srctxt, dialog.checkbox.get_active(), \
-                dialog.checkbox2.get_active()
-
-# ------------------------------------------------------------------------
-# Count lead spaces
-
 def leadspace(strx):
+
+    '''  Count lead spaces '''
     cnt = 0;
     for aa in range(len(strx)):
         bb = strx[aa]
@@ -251,7 +163,22 @@ def leadspace(strx):
             break
     return cnt
 
+if __name__ == '__main__':
+
+    print("Test pgutils:")
+    try:
+        raise(ValueError)
+    except:
+        print_exception("Test exception dump")
+
+    from s2sutil import *
+    lead = leadspace("   test leadspace")
+    print("lead", lead, is_ok(lead, 3))
+
+    ttt = time.time()
+    usleep(20)
+    ddd = 1000 * (time.time() - ttt)
+    print("time diff: ", ddd, "ms", is_ok(True, (ddd >= 20)) )
 
 
-
-
+# EOF

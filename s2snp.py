@@ -12,9 +12,9 @@ import random, math, sys, argparse
 from s2sutil import *
 from pgutil import *
 
-import numpy     as np
+import numpy as np
 
-verbose = 0
+VERBOSE = 0
 
 # Help identify a neuron by serial number
 
@@ -33,7 +33,7 @@ class S2sNp():
 
         # These are helpers
         self.serial = gl_serial; gl_serial += 1;
-        if verbose:
+        if VERBOSE:
             print("neulut init ",  "inuts %.03f " % inputs) #, end=' ')
 
         self.inputs  = np.zeros(inputs)
@@ -47,32 +47,32 @@ class S2sNp():
     # --------------------------------------------------------------------
     # Compare arrays, return closest match value
 
-    def cmp2(self, ins, val):
+    def _cmp(self, ins, val):
          #ret = np.power(np.subtract(ins, val),2)
          ret = np.abs(np.subtract(ins, val))
          #print("ins", ins, "val", val, "ret",
          #           ret, "sum", ret.sum())
          sum = ret.sum()
-         #print("cmp2", ins, val, sum)
+         #print("_cmp", ins, val, sum)
          return sum
 
     # --------------------------------------------------------------------
-    # Fire one neuron. Find the smallest diff.
+    # Evalusate one neuron. Find the smallest diff.
 
     def recall(self, ins, stride=1):
-        #print("fire", ins[:12])
+        #print("recall", ins[:12])
         old = 0xffff ; outx = []
         for aa in self.trarr:
-            ss = self.cmp2(ins, aa[0])
-            if verbose > 1:
-                print("fire",  aa[1], ss, rle(aa[0])[:8], end = "\n")
+            ss = self._cmp(ins, aa[0])
+            if VERBOSE > 1:
+                print("recall",  aa[1], ss, rle(aa[0])[:8], end = "\n")
             if old > ss:
                 old = ss
                 outx = aa[1]
 
         self.outputs = outx
         self.distance = old
-        if verbose > 1:
+        if VERBOSE > 1:
             print("outx", outx)
         return outx
 
@@ -87,9 +87,52 @@ class S2sNp():
             print("dummp %-2d" % cnt, aa[1], arr2[:8], " ...")
 
     def memorize(self, ins, outs, step = 1):
-        if verbose > 1:
+        if VERBOSE > 1:
             print("train", outs, rle(ins)[:8])
         self.trarr.append((np.array(ins), outs, step))
+
+VAL  = 0.5;   VAL2 = 0.6
+arr_0 =  (0,0)
+arr_1 =  (0,VAL)
+arr_2 =  (VAL,0)
+arr_3 =  (VAL,VAL)
+
+def test_or():
+
+    in_orarr =  (arr_0, arr_1,  arr_2,  arr_3, )
+    ou_orarr =  (0, 1, 1, 1,)
+    tin_orarr =  ( (0, 0), (VAL2, 0), (0, VAL2), (VAL2, VAL2) )
+    tou_orarr =  (0, 1, 1, 1,)
+
+    nn = S2sNp(len(in_orarr), 1)
+    for aa in range(len(in_orarr)):
+        nn.memorize(in_orarr[aa], ou_orarr[aa])
+
+    for cnt, aa in enumerate(tin_orarr):
+        ttt = time.time()
+        nn.recall(aa)
+        print(nn.outputs, tou_orarr[cnt])
+        assert nn.outputs == tou_orarr[cnt]
+    #assert 0
+
+def test_and():
+
+    in_andarr =  (arr_0, arr_1,  arr_2,  arr_3,)
+    ou_andarr =  (0, 0, 0, 1)
+    tin_andarr =  ((0, 0), (VAL2, 0), (0, VAL2), (VAL2, VAL2) )
+    tou_andarr =  (0, 0, 0, 1)
+
+    nn = S2sNp(len(in_andarr), 1)
+    for aa in range(len(in_andarr)):
+        nn.memorize(in_andarr[aa], ou_andarr[aa])
+
+    for cnt, aa in enumerate(tin_andarr):
+        ttt = time.time()
+        nn.recall(aa)
+        print(nn.outputs, tou_andarr[cnt])
+        assert nn.outputs == tou_andarr[cnt]
+    #assert 0
+
 
 if __name__ == '__main__':
 
@@ -101,12 +144,6 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--time', default=0, action="store_true")
 
     args = parser.parse_args()
-
-    VAL  = 0.5;   VAL2 = 0.6
-    arr_0 =  (0,0)
-    arr_1 =  (0,VAL)
-    arr_2 =  (VAL,0)
-    arr_3 =  (VAL,VAL)
 
     def testneu(nnn, tin, tout):
         tttt = 0

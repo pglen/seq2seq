@@ -1,61 +1,54 @@
 #!/usr/bin/env python
 
-import sys, random, time
+import os, sys, random, time
 
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 
-from s2sdict import *
-
-def pn(num):
-    return "% -7.3f" % num
+from pgdict import *
 
 # ------------------------------------------------------------------------
 
-# Deliver a random member of an array
+def pn(num, prec = 2):
+    ''' print with specified precision '''
+    return f"%-7.{prec}f" % num
 
 def randmemb(var):
+
+    ''' Deliver a random member of an array '''
+
     if type(var) != type( () ) and type(var) != type([]) :
         raise ValueError("Must be a list / array")
+
     rnd = random.randint(0, len(var)-1)
     #print "randmemb", rnd, "of", len(var)-1
     return var[rnd];
 
-# ------------------------------------------------------------------------
-# Deliver a random number in range of 0 to +1
-
-def neurand():
+def s2srand():
+    ''' Deliver a random number in range of 0 to +1 '''
     ret = random.random();
     #print "%+0.3f " % ret,
-    return ret
-
-def neurand2():
-    ret = random.random() * 2 - 1;
-    #print("neurand %+0.3f " % ret)
     return ret
 
 def sqr(vvv):
     return vvv * vvv
 
 def parr(arr):
+    ''' just print it '''
     for aa in arr:
         print(pn(aa), end = " ")
-
     print()
 
-def is_ok(val, ref):
+def is_ok(val, ref, okx = "OK", errx = "ERR"):
+    ''' return "OK" if equal, ERR if different '''
     if val == ref:
-        ret = "\033[32;1mOK\033[0m"
+        ret = "\033[32;1m%s\033[0m" % okx
     else:
-        ret = "\033[31;1mERR\033[0m"
+        ret = "\033[31;1m%s\033[0m" % errx
     return ret
 
-def newarr(size, fill):
-    arrx = []
-    for ee in range(size):
-        arrx.append(fill)
-    return arrx
-
 def load_font_img(fname):
+
+    ''' load image to memory '''
 
     arr = []; arr2 = []
     aaa = Image.open(fname)
@@ -114,12 +107,11 @@ def load_font_img(fname):
 
     return ccc
 
-
 def load_bw_image(fname):
 
     im = Image.open(fname)
     #print(im.format, im.size, im.mode, im.getbands())
-
+    # Convert
     arr3 = []
     for aa in range(im.size[1]):
         for bb in range(im.size[0]):
@@ -131,21 +123,19 @@ def load_bw_image(fname):
                 pix = 0
 
             arr3.append(pix)
-
     bw = Image.new("L", im.size, color=(255) )
     bw.putdata(arr3)
-
     return bw
 
 def lowpass(arrx, factorx = 1):
 
-    ''' low pass filter '''
+    ''' Low pass filter. Peeks stay in place. '''
 
-    lll = arrx[:]
+    lll = list(arrx)
     lenx = len(lll)
     for _ in range(factorx):
         # first and last unchanged
-        for ddd in range(1, lenx-2):
+        for ddd in range(1, lenx-1):
             avg = lll[ddd-1] + lll[ddd] + lll[ddd+1]
             lll[ddd] = avg // 3
     return lll
@@ -156,7 +146,7 @@ def falledges(arrx):
 
     lenx = len(arrx)
     prev = 0; fall = 0
-    eee = [0 for _ in range(lenx) ]
+    eee = [False for _ in range(lenx) ]
     for ddd in range(lenx):
         if arrx[ddd] < prev:
             if not fall:
@@ -169,22 +159,25 @@ def falledges(arrx):
 
 def raisededges(arrx):
 
-    ''' detect falling edges '''
+    ''' Detect rising edges '''
 
-    lenx = len(arrx)
-    prev = 0; fall = 0
-    eee = [0 for _ in range(lenx) ]
+    lenx = len(arrx); prev = 0
+    eee = [ False for _ in range(lenx) ]
     for ddd in range(lenx):
+        #print(arrx[ddd], end = " " )
         if arrx[ddd] > prev:
-            if not fall:
-                fall = True
-                eee[max(0, ddd-1)] = True
+            raisex = True
+            eee[ddd] = True
         else:
-            fall = False
+            raisex = False
         prev = arrx[ddd]
+        #print (eee[ddd])
     return eee
 
 def plotvals(arrx, plotx, lab = ""):
+
+    ''' Plot values for a one dim array '''
+
     xx = []; yy = []
     for cnt, aa in enumerate(arrx):
         xx.append(cnt); yy.append(aa)
@@ -198,7 +191,6 @@ def plotflags(fallx, arrx, plotx, nulval = 0, lab = ""):
             flag = arrx[ccc]
             xxx.append(ccc); yyy.append(flag)
     plotx.scatter(xxx, yyy, label=lab)
-
 
 def sections(thh1x, thh2y, bww, ppp = None):
 
@@ -269,8 +261,10 @@ def _sectiony(arry, xx, currx, ret, bww, ppp):
             #break
         progy += 1
 
-# Decorator for speed measure
-def measure(func):
+def measure_speed(func):
+
+    ''' Decorator for speed measure '''
+
     def run(*args, **kwargs):
         ttt = time.time()
         ret = func(*args, **kwargs)
@@ -285,7 +279,6 @@ def rle(arr):
     arr2 = []; cntx = 1
     if not len(arr):
         return arr2
-
     prev = arr[0];
     for bb in arr:
         if prev != bb:
@@ -297,29 +290,31 @@ def rle(arr):
             cntx = 1
         else:
             cntx += 1
-
-    # Special case: all the same values
+    # Special cases: leftover or all the same values
     if cntx  > 1:
         arr2.append((cntx-1, prev))
-
     return arr2
-
 
 def scale(lettx, newx, newy, ppp = None):
 
-    rows = [] ; cols = []
+    ''' Scale array to newx, newy '''
 
     #print(lettx)
-
+    rows = [] ; cols = []
     for nx, ny, val in lettx:
         if nx not in cols:
             cols.append(nx)
         if ny not in rows:
             rows.append(ny)
-    aspx =  newx /len(cols)   ; aspy =   newy / len(rows)
+
+    aspx =  newx / len(cols)
+    aspy =   newy / len(rows)
+    print(rows)
+    print(cols)
     #print("aspx %.3f" % aspx, "aspy %.3f" % aspy, "new:",
     #                newx, "old", len(cols), newy, len(rows))
     #ret = []
+
     retx = ret = DeepDict()
     for aa in range(newx):
         offs = len(rows) * aa
@@ -344,8 +339,6 @@ def scale(lettx, newx, newy, ppp = None):
         #    pass
     #print(len(ret))
     return ret
-
-from PIL import Image, ImageFont, ImageDraw
 
 def trainfonts(letters, nlut, sumx):
 
@@ -387,5 +380,48 @@ def trainfonts(letters, nlut, sumx):
         #nlut.dump()
 
     return aaa, bbb, row
+
+def scalex(mode, orgdim, newdim, datax):
+
+    ''' Scale image data '''
+
+    print("scalex", mode, orgdim, newdim, )
+    aspx =  orgdim[0] / newdim[0]
+    aspy =  orgdim[1] / newdim[1]
+    #print("sp", aspx, aspy)
+    ret = bytearray(newdim[0] * newdim[1])
+    for aa in range(newdim[1]):
+        offs =  aa * newdim[0]
+        aaa = int(aa * aspy)
+        offs2 =  aaa * orgdim[0]
+        for bb in range(newdim[0]):
+            bbb = int(bb * aspx)
+            ret[offs + bb] = datax[offs2 + bbb]
+
+    return bytes(ret)
+
+if __name__ == '__main__':
+    print("Testing utils")
+    #print(pn(1/3))
+
+    bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+    print("bw size", bw.size)
+
+    sumx = Image.new("L", (500,300), color=(150) )
+    sumx.paste(bw,  (10, 10,))
+
+    orgx = bytes(bw.getdata())
+    fact = 4
+    newsize = (int(bw.size[0] * fact), int(bw.size[1] * fact))
+    orgx2 = scalex("L", bw.size, newsize, orgx)
+
+    bw2 = Image.frombytes("L", newsize, orgx2)
+
+    sumx.paste(bw2,  (10, 70,))
+
+    #sumx.show()
+    sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+    sumx2.show()
+
 
 # EOF

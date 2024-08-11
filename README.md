@@ -43,9 +43,12 @@ a look up on the closest match.
  The match can always be traced to a particular memorized (trained) item. No more
 uncertainty where a particular result came from.
 
-| File | Function | Notes |
-| ----- | ----- | ---- |
+| File  | Function | Notes |
+| ----- | -----    | ----  |
+
 |s2snp.py | Main S2S implementation| Simple |
+|s2sutil.py | S2S utilities |  |
+|pgsutil.py | Misc. utilities |  |
 
 
 // EOF

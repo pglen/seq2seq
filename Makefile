@@ -7,6 +7,8 @@
 #  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+.PHONY: tests
+
 all:
 	@echo "Type 'make help' for a list of targets"
 
@@ -34,6 +36,8 @@ git:
 	git commit -m "$(AUTOCHECK)"
 	git push
 
+tests:
+	cd tests; pytest
 
 # End of Makefile
 
