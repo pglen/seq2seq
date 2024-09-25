@@ -137,11 +137,13 @@ def test_and():
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-                        prog='neunp',
-                        description='neural numpy demo',
-                        epilog='')
-    parser.add_argument('-c', '--count', default=2, type=int)
-    parser.add_argument('-t', '--time', default=0, action="store_true")
+                    prog='neunp',
+                    description='S2S (sequence to sequence) neural numpy demo of OR and AND gate logic',
+                    epilog='')
+    parser.add_argument('-c', '--count',
+                    help = "Number of gate inputs", default=2, type=int)
+    parser.add_argument('-t', '--time', default=0, action="store_true",
+                    help = "Show timing of the operations")
 
     args = parser.parse_args()
 

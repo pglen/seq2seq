@@ -174,24 +174,6 @@ def raisededges(arrx):
         #print (eee[ddd])
     return eee
 
-def plotvals(arrx, plotx, lab = ""):
-
-    ''' Plot values for a one dim array '''
-
-    xx = []; yy = []
-    for cnt, aa in enumerate(arrx):
-        xx.append(cnt); yy.append(aa)
-    plotx.plot(xx, yy, label=lab)
-
-def plotflags(fallx, arrx, plotx, nulval = 0, lab = ""):
-
-    xxx = []; yyy = []
-    for ccc in range(len(arrx)):
-        if fallx[ccc]:
-            flag = arrx[ccc]
-            xxx.append(ccc); yyy.append(flag)
-    plotx.scatter(xxx, yyy, label=lab)
-
 def sections(thh1x, thh2y, bww, ppp = None):
 
     ''' Boundary by non zero sectons
@@ -295,51 +277,6 @@ def rle(arr):
         arr2.append((cntx-1, prev))
     return arr2
 
-def scale(lettx, newx, newy, ppp = None):
-
-    ''' Scale array to newx, newy '''
-
-    #print(lettx)
-    rows = [] ; cols = []
-    for nx, ny, val in lettx:
-        if nx not in cols:
-            cols.append(nx)
-        if ny not in rows:
-            rows.append(ny)
-
-    aspx =  newx / len(cols)
-    aspy =   newy / len(rows)
-    print(rows)
-    print(cols)
-    #print("aspx %.3f" % aspx, "aspy %.3f" % aspy, "new:",
-    #                newx, "old", len(cols), newy, len(rows))
-    #ret = []
-
-    retx = ret = DeepDict()
-    for aa in range(newx):
-        offs = len(rows) * aa
-        for bb in range(newy):
-            try:
-                bbb = bb / aspx
-                aaa = aa / aspy
-                #print("%.3f " % aaa, "%.3f " %bbb, int(aaa), int(bbb))
-                val = lettx[int(bbb + offs)] [2]
-            except IndexError:
-                #print(bbb, aaa, sys.exc_info())
-                pass
-            except:
-                print(sys.exc_info())
-            #ret.append((aa, bb, val))
-            retx[aa][bb] = val
-
-    if ppp:
-        pass
-        #for aa, bb, val in ret:
-        #    ppp.putpixel((aa, bb), val)
-        #    pass
-    #print(len(ret))
-    return ret
-
 def trainfonts(letters, nlut, sumx):
 
     #nlut = neulut.NeuLut(200, 8)
@@ -400,28 +337,184 @@ def scalex(mode, orgdim, newdim, datax):
 
     return bytes(ret)
 
+#@measure_speed
+def mirror(mode, dims, lettx):
+
+    ''' Mirror array '''
+    retx = bytearray(dims[0] * dims[1])
+    for aa in range(dims[1]):
+        offs = dims[0] * aa
+        for bb in range(dims[0]):
+            retx[offs + ((dims[0]-1) - bb)] = lettx[int(bb + offs)]
+    return bytes(retx)
+
+def vmirror(mode, dims, lettx):
+
+    ''' Vertical mirror array '''
+
+    retx = bytearray(dims[0] * dims[1])
+    for aa in range(dims[1]):
+        offs = dims[0] * aa
+        offs2 = dims[0] * ((dims[1] - 1) - aa)
+        for bb in range(dims[0]):
+            retx[offs + bb] = lettx[bb + offs2]
+    return bytes(retx)
+
+def swapxy(mode, dims, lettx):
+
+    ''' Swap x axis with y axis '''
+
+    retx = bytearray(dims[0] * dims[1])
+    for aa in range(dims[1]):
+        offs = dims[0] * aa
+        for bb in range(dims[0]):
+            offs2 = dims[1] * bb
+            retx[offs2 + aa] = lettx[offs + bb]
+    return bytes(retx)
+
+def blur(mode, dims, fact, lettx):
+
+    ''' Blur image array '''
+
+    retx = bytearray(dims[0] * dims[1])
+    for aa in range(dims[1]):
+        offs = dims[0] * aa
+        linex = bytearray(lettx[offs:offs+dims[0]])
+        linex = lowpass(linex, fact)
+        for bb in range(dims[0]):
+            pass
+            retx[offs + bb] = linex[bb]
+    return bytes(retx)
+
+def vblur(mode, dims, fact, lettx):
+
+    ''' Blur image array, vertically '''
+
+    retx = bytearray(dims[0] * dims[1])
+    for aa in range(dims[0]):
+        linex = bytearray(dims[1])
+        for bb in range(dims[1]):
+            offs = dims[0] * bb
+            linex[bb] = lettx[offs + aa]
+        linex = lowpass(linex, fact)
+        for bb in range(dims[1]):
+            offs = dims[0] * bb
+            retx[offs + aa] =  linex[bb]
+    return bytes(retx)
+
 if __name__ == '__main__':
-    print("Testing utils")
+
+    #print("Testing utils")
     #print(pn(1/3))
 
-    bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
-    print("bw size", bw.size)
+    import argparse
+    parser = argparse.ArgumentParser(
+                        prog='s2util',
+                        description='s2util tests',
+                        epilog='')
 
-    sumx = Image.new("L", (500,300), color=(150) )
-    sumx.paste(bw,  (10, 10,))
+    parser.add_argument('-s', '--scale', default=0, action="store_true",
+                                    help="Test scale image")
+    parser.add_argument('-m', '--mirror', default=0, action="store_true",
+                                    help="Test mirror image")
+    parser.add_argument('-v', '--vmirror', default=0, action="store_true",
+                                    help="Test vertical mirror image")
+    parser.add_argument('-w', '--swap', default=0, action="store_true",
+                                    help="Test swap x y on image")
+    parser.add_argument('-b', '--blur', default=0, action="store_true",
+                                    help="Test blur image")
+    parser.add_argument('-B', '--vblur', default=0, action="store_true",
+                                    help="Test vertical blur image")
+    parser.add_argument('-x', '--crossblur', default=0, action="store_true",
+                                    help="Test cross blur image")
+    parser.add_argument('-t', '--fact', default=1, type=int, action="store",
+                                    help="Blur factor")
+    args = parser.parse_args()
+    #print("args", args)
 
-    orgx = bytes(bw.getdata())
-    fact = 4
-    newsize = (int(bw.size[0] * fact), int(bw.size[1] * fact))
-    orgx2 = scalex("L", bw.size, newsize, orgx)
+    if args.scale:
+        bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+        sumx = Image.new("L", (500,300), color=(150) )
+        sumx.paste(bw,  (10, 10,))
+        orgx = bytes(bw.getdata())
+        fact = 4
+        newsize = (int(bw.size[0] * fact), int(bw.size[1] * fact))
+        orgx2 = scalex("L", bw.size, newsize, orgx)
+        bw2 = Image.frombytes("L", newsize, orgx2)
+        sumx.paste(bw2,  (10, 70,))
+        sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+        sumx2.show()
 
-    bw2 = Image.frombytes("L", newsize, orgx2)
+    elif args.mirror:
+        bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+        sumx = Image.new("L", (500,300), color=(150) )
+        sumx.paste(bw, (10, 10,))
+        orgx = bytes(bw.getdata())
+        fact = 4
+        orgx2 = mirror("L", bw.size, orgx)
+        bw2 = Image.frombytes("L", bw.size, orgx2)
+        sumx.paste(bw2,  (10, 70,))
+        sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+        sumx2.show()
+    elif args.vmirror:
+        bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+        sumx = Image.new("L", (500,300), color=(150) )
+        sumx.paste(bw, (10, 10,))
+        orgx = bytes(bw.getdata())
+        fact = 4
+        orgx2 = vmirror("L", bw.size, orgx)
+        bw2 = Image.frombytes("L", bw.size, orgx2)
+        sumx.paste(bw2,  (10, 70,))
+        sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+        sumx2.show()
+    elif args.swap:
+        bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+        sumx = Image.new("L", (500,300), color=(150) )
+        sumx.paste(bw, (10, 10,))
+        orgx = bytes(bw.getdata())
+        fact = 4
+        orgx2 = swapxy("L", bw.size, orgx)
+        bw2 = Image.frombytes("L", (bw.size[1], bw.size[0]), orgx2)
+        sumx.paste(bw2,  (10, 70,))
+        sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+        sumx2.show()
 
-    sumx.paste(bw2,  (10, 70,))
+    elif args.blur:
+        bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+        sumx = Image.new("L", (500,300), color=(150) )
+        sumx.paste(bw, (10, 10,))
+        orgx = bytes(bw.getdata())
+        orgx2 = blur("L", bw.size, args.fact, orgx)
+        bw2 = Image.frombytes("L", (bw.size[0], bw.size[1]), orgx2)
+        sumx.paste(bw2,  (10, 70,))
+        sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+        sumx2.show()
 
-    #sumx.show()
-    sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
-    sumx2.show()
+    elif args.vblur:
+        bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+        sumx = Image.new("L", (500,300), color=(150) )
+        sumx.paste(bw, (10, 10,))
+        orgx = bytes(bw.getdata())
+        orgx2 = vblur("L", bw.size, args.fact, orgx)
+        bw2 = Image.frombytes("L", (bw.size[0], bw.size[1]), orgx2)
+        sumx.paste(bw2,  (10, 70,))
+        sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+        sumx2.show()
 
+    elif args.crossblur:
+        bw = load_bw_image(os.path.join("png", "srect_white_abc.png"))
+        sumx = Image.new("L", (500,300), color=(150) )
+        sumx.paste(bw, (10, 10,))
+        orgx = bytes(bw.getdata())
+        orgx1 = vblur("L", bw.size, args.fact, orgx)
+        orgx2 = blur("L", bw.size, args.fact, orgx1)
+        #orgx3 = vblur("L", bw.size, args.fact, orgx2)
+        bw2 = Image.frombytes("L", (bw.size[0], bw.size[1]), orgx2)
+        sumx.paste(bw2,  (10, 70,))
+        sumx2 = sumx.resize((sumx.size[0] * 3, sumx.size[1] * 3))
+        sumx2.show()
 
+    else:
+        #print("Use: s2util --help")
+        print(parser.print_help())
 # EOF
