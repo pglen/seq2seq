@@ -14,7 +14,7 @@ verbose = 0
 imgdir = "png"
 
 letters = [ chr(nn) for nn in range(32, 127) ]
-#letters = "abcdefgh"
+#letters = "a" # bcdefgh"
 #print(letters)
 
 testx = []
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     aaa, bbb, row = s2sutil.trainfonts(letters, callb, sumx)
     #print("train ret", aaa, bbb, row)
-    nlut.dump()
+    #nlut.dump()
     sumx2 = Image.new("L", (500,300), color=(150) )
     nlut.images(sumx2)
     sumx2.show()

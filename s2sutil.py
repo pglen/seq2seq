@@ -279,7 +279,7 @@ def trainfonts(letters, callb, sumx = None):
     #font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
     #font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansDisplay-Regular.ttf", 20)
 
-    # Flatten font to linear
+    # Flatten font to linear, calc dims
     row = 10; hhh = 10
     aaa = 0; bbb = 0
     for aa in letters:
@@ -306,13 +306,19 @@ def trainfonts(letters, callb, sumx = None):
         draw = ImageDraw.Draw(fff)
         draw.text((0, 0), aa, font=font)
 
-        ddd = fff.getdata()
-        callb(aa, sss, ddd)
+        # Scan for empty rows
+        if aa != " ":
+            fff2 = cropx(cropy(fff))
+        else:
+            fff2 = fff
+
+        ddd = fff2.getdata()
+        callb(aa, fff2.size, ddd)
 
         if sumx:
-            sumx.paste(fff, (hhh, row,))
+            sumx.paste(fff2, (hhh, row,))
             sumx.paste(annox, (hhh, row - 6,))
-            sumx.paste(annoy, (hhh, row + sss[1] + 1,))
+            sumx.paste(annoy, (hhh, row + fff2.size[1] + 1,))
 
         hhh += sss[0] + 6
         if hhh > 450:
@@ -321,6 +327,55 @@ def trainfonts(letters, callb, sumx = None):
         #nlut.dump()
 
     return aaa, bbb, row
+
+
+def cropx(fff):
+
+    ''' trim left and right '''
+
+    sss = fff.size
+    payl = 0; skip = 0; endskip = sss[0]
+    for yyy in range(sss[0]):
+        rowx = sss[1] * yyy
+        full = 1
+        for xxx in range(sss[1]):
+            ccc = fff.getpixel((yyy, xxx,))
+            if ccc != 255:
+                full = 0
+                payl = 1
+        if full:
+            if not payl:
+                skip += 1
+            else:
+                endskip -= 1
+        #print("skip", skip)
+        #skip = 0
+    fff2 = fff.crop((skip, 0, endskip, sss[1]))
+    return fff2
+
+def cropy(fff):
+
+    ''' trim top and buttom '''
+
+    sss = fff.size
+    payl = 0; skip = 0; endskip = sss[1]
+    for yyy in range(sss[1]):
+                rowx = sss[0] * yyy
+                full = 1
+                for xxx in range(sss[0]):
+                    ccc = fff.getpixel((xxx, yyy,))
+                    if ccc != 255:
+                        full = 0
+                        payl = 1
+                if full:
+                    if not payl:
+                        skip += 1
+                    else:
+                        endskip -= 1
+        #print("skip", skip)
+        #skip = 0
+    fff2 = fff.crop((0, skip, sss[0], endskip))
+    return fff2
 
 def scalex(mode, orgdim, newdim, datax):
 
