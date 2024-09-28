@@ -7,12 +7,13 @@
    Test cases for simple gates with diverging values
 '''
 
-import random, math, sys, argparse
-
-from s2sutil import *
-from pgutil import *
-
+import random, math, sys, argparse, time, uuid
 import numpy as np
+
+from PIL import Image, ImageFont, ImageDraw
+
+import pgutil
+import s2sutil
 
 VERBOSE = 0
 
@@ -21,11 +22,13 @@ VERBOSE = 0
 gl_serial = 0
 
 # ------------------------------------------------------------------------
-# The basic building block, numpy implementation
-# The training material is pushed to an array;
-# The lookup is executed finding the closest match
 
 class S2sNp():
+
+    ''' The basic building block, numpy implementation
+            The training material is pushed to an array;
+            The lookup is executed finding the closest match
+    '''
 
     def __init__(self, inputs, outputs):
 
@@ -36,6 +39,8 @@ class S2sNp():
         if VERBOSE:
             print("neulut init ",  "inuts %.03f " % inputs) #, end=' ')
 
+        self.uuid = uuid.uuid1()
+        #print(self.uuid)
         self.inputs  = np.zeros(inputs)
         self.outputs  = np.zeros(outputs)
         self.distance = 0
@@ -43,6 +48,9 @@ class S2sNp():
 
     def inlen(self):
         return len(self.inputs)
+
+    def outlen(self):
+        return len(self.outputs)
 
     # --------------------------------------------------------------------
     # Compare arrays, return closest match value
@@ -57,9 +65,12 @@ class S2sNp():
          return sum
 
     # --------------------------------------------------------------------
-    # Evalusate one neuron. Find the smallest diff.
-
     def recall(self, ins, stride=1):
+
+        '''
+            Evaluate one neuron. Find the smallest diff.
+        '''
+
         #print("recall", ins[:12])
         old = 0xffff ; outx = []
         for aa in self.trarr:
@@ -81,15 +92,48 @@ class S2sNp():
                     str(self.outputs)[:20] + " ..."
 
     def dump(self):
+
+        ''' Show details. For testing '''
+
         for cnt, aa in enumerate(self.trarr):
             #print(aa[0][:16])
-            arr2 = rle(aa[0])
-            print("dummp %-2d" % cnt, aa[1], arr2[:8], " ...")
+            arr2 = s2sutil.rle(aa[0])
+            print("lett", "'" + aa[1] + "'", "dims", aa[2], arr2[:8], " ...")
 
-    def memorize(self, ins, outs, step = 1):
+    def memorize(self, ins, outs, dims = (), step = 1):
+
+        ''' Remember training material '''
+
         if VERBOSE > 1:
-            print("train", outs, rle(ins)[:8])
-        self.trarr.append((np.array(ins), outs, step))
+            print("train", (cnt * 20, 0), rle(ins)[:8])
+        self.trarr.append((np.array(ins, dtype="ubyte"), outs, dims, step))
+        #self.trarr.append((ins, outs, dims, step))
+
+    def images(self, sumx):
+
+        ''' Put images to surface. For testing '''
+
+        xx = 10; yy = 10
+        for cnt, aa in enumerate(self.trarr):
+            try:
+                #print("np", aa[0].shape, aa[0].size)
+                #iii = Image.frombuffer("L", aa[2], aa[0] )
+                iii = Image.frombytes("L", aa[2], aa[0] )
+                #arrx = aa[0].reshape((aa[2][1], aa[2][0]))
+                #print("arrx", arrx.shape, arrx.size)
+                #iii = Image.fromarray(arrx, mode="L")
+                xx += aa[2][0] + 2
+                if xx > 480:
+                    xx = 10
+                    yy += aa[2][1] + 2
+                sumx.paste(iii, (xx, yy))
+
+            except:
+                print("exc:", aa[1], sys.exc_info())
+                #raise
+        return xx, yy
+
+# ------------------------------------------------------------------------
 
 VAL  = 0.5;   VAL2 = 0.6
 arr_0 =  (0,0)
@@ -153,7 +197,7 @@ if __name__ == '__main__':
             ttt = time.time()
             nnn.recall(aa)
             tttt +=  time.time() - ttt
-            print("in", aa[:12], "out",  nnn.outputs, is_ok(nnn.outputs, tout[cnt]))
+            print("in", aa[:12], "out",  nnn.outputs, pgutil.is_ok(nnn.outputs, tout[cnt]))
         if args.time:
             print("%.3f ms" % (tttt * 1000) )
 

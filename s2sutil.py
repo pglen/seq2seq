@@ -38,14 +38,6 @@ def parr(arr):
         print(pn(aa), end = " ")
     print()
 
-def is_ok(val, ref, okx = "OK", errx = "ERR"):
-    ''' return "OK" if equal, ERR if different '''
-    if val == ref:
-        ret = "\033[32;1m%s\033[0m" % okx
-    else:
-        ret = "\033[31;1m%s\033[0m" % errx
-    return ret
-
 def load_font_img(fname):
 
     ''' load image to memory '''
@@ -277,12 +269,13 @@ def rle(arr):
         arr2.append((cntx-1, prev))
     return arr2
 
-def trainfonts(letters, nlut, sumx):
+def trainfonts(letters, callb, sumx = None):
 
-    #nlut = neulut.NeuLut(200, 8)
+    ''' add fonts, callback with font and dim and array '''
 
     #font = ImageFont.load_default()
     font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSans.ttf", 20)
+    sfont = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSans.ttf", 6)
     #font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
     #font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansDisplay-Regular.ttf", 20)
 
@@ -297,23 +290,34 @@ def trainfonts(letters, nlut, sumx):
 
     for aa in letters:
         sss = font.getsize(aa)
+        fw = "%s" % (sss[0]); fh = "%s" % (sss[1])
+        fww = sfont.getsize(fw)
+        fhh = sfont.getsize(fh)
+
+        annox = Image.new("L", fww, color=(200) )
+        draw = ImageDraw.Draw(annox)
+        draw.text((0, 0), fw, font=sfont)
+
+        annoy = Image.new("L", fhh, color=(200) )
+        draw = ImageDraw.Draw(annoy)
+        draw.text((0, 0), fh, font=sfont)
+
         fff = Image.new("L", sss, color=(255) )
         draw = ImageDraw.Draw(fff)
         draw.text((0, 0), aa, font=font)
-        #scale to uniform
-        #fff = fff.resize((sss[0], sss[1]))
-        fff = fff.resize((aaa, bbb))
 
-        ddd = list(fff.getdata())
-        if aa == 'a':
-            testx = ddd[:]
-        #print(aa, len(ddd), sss, ddd)
-        nlut.memorize(ddd, aa)
-        sumx.paste(fff, (hhh, row,))
-        hhh += aaa + 5
+        ddd = fff.getdata()
+        callb(aa, sss, ddd)
+
+        if sumx:
+            sumx.paste(fff, (hhh, row,))
+            sumx.paste(annox, (hhh, row - 6,))
+            sumx.paste(annoy, (hhh, row + sss[1] + 1,))
+
+        hhh += sss[0] + 6
         if hhh > 450:
             hhh = 10
-            row += 20
+            row += bbb + 16
         #nlut.dump()
 
     return aaa, bbb, row

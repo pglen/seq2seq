@@ -163,6 +163,14 @@ def leadspace(strx):
             break
     return cnt
 
+def is_ok(val, ref, okx = "OK", errx = "ERR"):
+    ''' return "OK" if equal, ERR if different '''
+    if val == ref:
+        ret = "\033[32;1m%s\033[0m" % okx
+    else:
+        ret = "\033[31;1m%s\033[0m" % errx
+    return ret
+
 if __name__ == '__main__':
 
     print("Test pgutils:")
