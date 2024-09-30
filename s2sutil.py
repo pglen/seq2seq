@@ -284,23 +284,14 @@ def trainfonts(letters, callb, sumx = None):
     aaa = 0; bbb = 0
     for aa in letters:
         sss = font.getsize(aa)
-        aaa += sss[0]; bbb += sss[1]
-    aaa //= len(letters)
-    bbb //= len(letters)
+        aaa = max(aaa, sss[0])
+        bbb = max(bbb, sss[1])
+
+    #aaa //= len(letters)
+    #bbb //= len(letters)
 
     for aa in letters:
         sss = font.getsize(aa)
-        fw = "%s" % (sss[0]); fh = "%s" % (sss[1])
-        fww = sfont.getsize(fw)
-        fhh = sfont.getsize(fh)
-
-        annox = Image.new("L", fww, color=(200) )
-        draw = ImageDraw.Draw(annox)
-        draw.text((0, 0), fw, font=sfont)
-
-        annoy = Image.new("L", fhh, color=(200) )
-        draw = ImageDraw.Draw(annoy)
-        draw.text((0, 0), fh, font=sfont)
 
         fff = Image.new("L", sss, color=(255) )
         draw = ImageDraw.Draw(fff)
@@ -311,6 +302,19 @@ def trainfonts(letters, callb, sumx = None):
             fff2 = cropx(cropy(fff))
         else:
             fff2 = fff
+
+        ssss = fff2.size
+        fw = "%s" % (ssss[0]); fh = "%s" % (ssss[1])
+        fww = sfont.getsize(fw)
+        fhh = sfont.getsize(fh)
+
+        annox = Image.new("L", fww, color=(200) )
+        draw = ImageDraw.Draw(annox)
+        draw.text((0, 0), fw, font=sfont)
+
+        annoy = Image.new("L", fhh, color=(200) )
+        draw = ImageDraw.Draw(annoy)
+        draw.text((0, 0), fh, font=sfont)
 
         ddd = fff2.getdata()
         callb(aa, fff2.size, ddd)
