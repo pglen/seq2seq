@@ -51,6 +51,28 @@ class S2sNp():
     def outlen(self):
         return len(self.outputs)
 
+    def _cmp2(self, ins, ref):
+        ret = 1; ret2 = 1
+        #for aa in range(len(ins)):
+        #    if ins[aa]:
+        #        cnt = 1
+        if 1: #cnt:
+            for aa in range(len(ins)):
+                try:
+                    if ins[aa] != 0 and ref[aa] != 0:
+                        ret += 1
+                    else:
+                        ret2 += 1
+                except IndexError:
+                    pass
+                    #ret2 += 1
+                except:
+                    pass
+                    print("x", sys.exc_info())
+
+            #ret +=  ins[aa] * ref[aa]
+        return ret, ret2
+
     # --------------------------------------------------------------------
     # Compare arrays, return closest match value
 
@@ -91,67 +113,63 @@ class S2sNp():
         if self.verbose > 0:
             print("outx", outx, "dist", "%.2f" % self.distance)
         return outx
-
+        #
     def recall2d(self, offs, dimx, imgdat):
 
         '''
             Evaluate one neuron. Find the smallest diff.
         '''
 
-        #print("recall2d", "offs:", offs, "dimx:", dimx)
+        print("recall2d", "offs:", offs, "dimx:", dimx)
         #print("data", s2sutil.rle(imgdat)[:6])
 
-        for bb in range(12):
-            rowx = bb * dimx[0]
-            curr = imgdat[offs + rowx : offs + rowx + 10]
-            for cc in curr:
-                if cc > 128:
-                    print(" ", end = "")
-                else:
-                    print("*", end = "")
-            print()
-        print()
+        #for bb in range(12):
+        #    rowx = bb * dimx[0]
+        #    curr = imgdat[offs + rowx : offs + rowx + 12]
+        #    for cc in curr:
+        #            print("%2x" % cc, end = " ")
+        #    print()
+        #print()
 
-        old = 0xfffffff ; outx = ''
+        outx = ''; old = 0xffff
+
         for aa in self.trarr:
+            #print("char '%c'" % aa[1], aa[2])
+            #if aa[1] == 'y':
+            #    for bb in range(aa[2][1]):
+            #        for cc in aa[0][bb]:
+            #            print("%2x" % cc, end = " ")
+            #        print()
+            #    print()
 
-            #if aa[1] != "8":
-            #    continue
-
-            for bb in range(aa[2][1]):
-                #    print(aa[0][bb])
-                for cc in aa[0][bb]:
-                    if cc > 128:
-                        print(" ", end = "")
-                    else:
-                        print("*", end = "")
-                print()
-
-            print("char '%c'" % aa[1], aa[2], end = " ")
             #for bb in range(aa[2][1]):
             #    print(aa[2], type(aa[0][bb]), aa[0][bb])
 
-            ss = 0
+            hit = 0; xhit = 0
             for bb in range(aa[2][1]):
                 rowx = bb * dimx[0]
-                curr = imgdat[offs + rowx : offs + rowx + aa[2][0]]
-                #print("curr", type(curr), curr)
-                curr2 = np.array(curr, dtype="ubyte")
-                #print("curr2", type(curr2), curr2)
-                ss += self._cmp(curr2, aa[0][bb])
-                #print("%.2f" % ss, end = " ")
+                #curr = imgdat[offs + rowx : offs + rowx + aa[2][0]]
+                curr = imgdat[offs + rowx : offs + rowx + 12]
+                #for aaa in curr:
+                #    print("%2x" % aaa, end = " ")
+                #print()
+                sss, ssss = self._cmp2(curr, aa[0][bb])
+                #print("%.2f %.2f - " % (sss, ssss), end = " ")
+                hit += sss
+                xhit += ssss
 
+            print()
             #ss /= aa[2][0] * aa[2][1]
-
-            if old > ss:
-                old = ss
+            if old > hit:
+                old = hit
                 outx = aa[1]
 
-            print("old=%.2f" % old)
+            #print("res: char='%c' hit=%.2f xhit=%.2f " % (aa[1], hit, xhit), aa[2] )
+            print("res: char='%c' hitz=%.2f " % (aa[1], xhit / hit), aa[2] )
             '''if 1: #VERBOSE > 1:
                     slx = s2sutil.rle(img[bb])
                     print("recall2d:",  aa[1], ss, slx, end = "\n")
-                '''
+            '''
         self.outputs = outx
         self.distance = old
         if 1: #VERBOSE > 1:

@@ -317,7 +317,14 @@ def trainfonts(letters, callb, sumx = None):
         draw.text((0, 0), fh, font=sfont)
 
         ddd = fff2.getdata()
-        callb(aa, fff2.size, ddd)
+        dddd = bytearray(len(ddd))
+        for cc in range(len(ddd)):
+            if ddd[cc] > 128:
+                dddd[cc] = 255
+            else:
+                dddd[cc] = 0
+
+        callb(aa, fff2.size, dddd)
 
         if sumx:
             sumx.paste(fff2, (hhh, row,))

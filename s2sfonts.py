@@ -17,7 +17,7 @@ imgdir = "png"
 letters = [ chr(nn) for nn in range(ord('a'), ord('z')) ]
 #letters += [ chr(nn) for nn in range(ord('A'), ord('z')) ]
 #letters += [ chr(nn) for nn in range(ord('0'), ord('9')) ]
-letters = "abc" # bcdefgh"
+#letters = "ab" # bcdefgh"
 #print(letters)
 #sys.exit(0)
 
