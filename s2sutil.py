@@ -269,7 +269,7 @@ def rle(arr):
         arr2.append((cntx-1, prev))
     return arr2
 
-def trainfonts(letters, callb, sumx = None):
+def trainfonts(letters, callb, picx = None):
 
     ''' add fonts, callback with font and dim and array '''
 
@@ -324,12 +324,13 @@ def trainfonts(letters, callb, sumx = None):
             else:
                 dddd[cc] = 0
 
-        callb(aa, fff2.size, dddd)
+        #callb(aa, fff2.size, dddd)
+        callb(aa, fff2)
 
-        if sumx:
-            sumx.paste(fff2, (hhh, row,))
-            sumx.paste(annox, (hhh, row - 6,))
-            sumx.paste(annoy, (hhh, row + fff2.size[1] + 1,))
+        if picx:
+            picx.paste(fff2, (hhh, row,))
+            picx.paste(annox, (hhh, row - 6,))
+            picx.paste(annoy, (hhh, row + fff2.size[1] + 1,))
 
         hhh += sss[0] + 6
         if hhh > 450:
@@ -471,6 +472,43 @@ def vblur(mode, dims, fact, lettx):
             offs = dims[0] * bb
             retx[offs + aa] =  linex[bb]
     return bytes(retx)
+
+class SumImg(object):
+
+    def __init__(self, *args, **kwargs):
+        #print("init", str(args), str(kwargs))
+        self.gap = 4
+        self.xx = self.gap
+        self.yy = self.gap
+
+    def __getattr__(self, name):
+        if name == "_img":
+            raise AttributeError()
+        return getattr(self._img, name)
+
+    def new(*args, **kwargs):
+        #print("new", str(args), str(kwargs))
+        _img = Image.new(*args, **kwargs)
+        ccc = SumImg()
+        ccc._img = _img
+        return ccc
+
+    def newrow(self, other):
+        self.xx = self.gap
+        self.yy += other.size[1] + self.gap
+
+    def pastex(self, other):
+        #print("Paste", str(args), str(kwargs))
+        if self.xx + other.size[0] + self.gap >= self.size[0]:
+            self.newrow(other)
+        self.paste(other, (self.xx, self.yy))
+        self.xx += other.size[0] + self.gap
+
+    def mag(self, fact):
+        imgx = self.resize((self.size[0] * fact, self.size[1] * fact))
+        return imgx
+
+#print(dir(SumImg))
 
 if __name__ == '__main__':
 

@@ -52,7 +52,7 @@ class S2sNp():
         return len(self.outputs)
 
     def _cmp2(self, ins, ref):
-        ret = 1; ret2 = 1
+        cmp = 0; ret = 1; ret2 = 1
         #for aa in range(len(ins)):
         #    if ins[aa]:
         #        cnt = 1
@@ -157,15 +157,14 @@ class S2sNp():
                 #print("%.2f %.2f - " % (sss, ssss), end = " ")
                 hit += sss
                 xhit += ssss
-
-            print()
-            #ss /= aa[2][0] * aa[2][1]
+            #print()
+            #hit *= aa[2][0] * aa[2][1]
             if old > hit:
                 old = hit
                 outx = aa[1]
 
-            #print("res: char='%c' hit=%.2f xhit=%.2f " % (aa[1], hit, xhit), aa[2] )
-            print("res: char='%c' hitz=%.2f " % (aa[1], xhit / hit), aa[2] )
+            print("res: char='%c' hit=%.2f xhit=%.2f " % (aa[1], hit, xhit), aa[2] )
+            #print("res: char='%c' hitz=%.2f " % (aa[1], xhit / hit), aa[2] )
             '''if 1: #VERBOSE > 1:
                     slx = s2sutil.rle(img[bb])
                     print("recall2d:",  aa[1], ss, slx, end = "\n")
